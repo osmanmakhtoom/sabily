@@ -1,0 +1,10 @@
+# https://taskfile.dev
+
+version: '3'
+
+tasks:
+  clean:
+    cmds:
+      - ruff check --quiet
+      - ruff format
+    silent: true
