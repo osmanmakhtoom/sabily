@@ -32,7 +32,7 @@ class UserAddressesSerializerV1(serializers.ModelSerializer):
 
 class UserSerializerV1(serializers.ModelSerializer):
     userprofile = UserProfileSerializerV1(read_only=True)
-    addresses = serializers.SerializerMethodField()
+    addresses = UserAddressesSerializerV1(many=True)
 
     class Meta:
         model = User
@@ -58,6 +58,6 @@ class UserSerializerV1(serializers.ModelSerializer):
             "last_login": {"read_only": True},
         }
 
-    def get_addresses(self, obj):
-        addresses = obj.addresses.filter(is_verified=True)
-        return UserAddressesSerializerV1(addresses, many=True, read_only=True).data
+
+class UserChangeActivationSerializerV1(serializers.Serializer):
+    is_active = serializers.BooleanField()
