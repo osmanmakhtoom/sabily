@@ -199,4 +199,16 @@ SIMPLE_JWT = {
     ),
 }
 
+# === SWAGGER ===
 SWAGGER_USE_COMPAT_RENDERERS = False
+SWAGGER_SETTINGS = {
+    'SECURITY_DEFINITIONS': {
+        'Bearer': {
+            'type': 'apiKey',
+            'name': 'Authorization',
+            'in': 'header',
+            'description': 'JWT authorization token using the Bearer scheme. Example: "Bearer {token}"'
+        }
+    },
+    'SECURITY_REQUIREMENTS': [{'Bearer': []}]
+}
