@@ -10,11 +10,14 @@ from apps.account.api.v1.serializers import (
     UserSerializerV1,
     UserProfileSerializerV1,
     UserAddressesSerializerV1,
+    UserChangeActivationSerializerV1,
 )
+from utils.bases.paginated_response import create_paginated_response_serializer
+from utils.permissions import IsSuperUser
 
 
 class UserViewSet(viewsets.ModelViewSet):
-    queryset = User.objects.filter(is_active=True)
+    queryset = User.objects.filter(deleted=False)
     serializer_class = UserSerializerV1
     permission_classes = (permissions.IsAdminUser,)
     lookup_field = "id"
@@ -31,22 +34,63 @@ class UserViewSet(viewsets.ModelViewSet):
     def get_view_description(self, html=False):
         return "Account and Users Actions"
 
-    @swagger_auto_schema(tags=["Users"])
+    @swagger_auto_schema(
+        tags=["Users"],
+        operation_summary="Get Users",
+        operation_description="Get Users",
+        operation_id="get_users",
+        responses={200: create_paginated_response_serializer(UserSerializerV1)}
+    )
     def list(self, request, *args, **kwargs):
         return super().list(request, *args, **kwargs)
 
-    @swagger_auto_schema(tags=["Users"])
+    @swagger_auto_schema(
+        tags=["Users"],
+        operation_summary="Get User",
+        operation_description="Get User",
+        operation_id="get_user",
+        responses={200: UserSerializerV1()}
+    )
     def retrieve(self, request, *args, **kwargs):
         return super().retrieve(request, *args, **kwargs)
 
-    @swagger_auto_schema(tags=["Users"])
+    @swagger_auto_schema(
+        tags=["Users"],
+        operation_summary="Deactivate User",
+        operation_description="Deactivate User",
+        operation_id="deactivate_user",
+        responses={200: UserSerializerV1()},
+        request_body=UserChangeActivationSerializerV1,
+    )
+    @action(
+        detail=True,
+        methods=["patch"],
+        url_path="deactivate-user",
+        permission_classes=[permissions.IsAdminUser, IsSuperUser],
+    )
+    def deactivate_user(self, request, *args, **kwargs):
+        user = self.get_object()
+        user.is_active = request.data.get("is_active", False)
+        user.save(update_fields=["is_active"])
+        return Response(UserSerializerV1(instance=user).data, status=status.HTTP_200_OK)
+
+    @swagger_auto_schema(
+        tags=["Users"],
+        operation_summary="Destroy User",
+        operation_description="Destroy User",
+        operation_id="destroy_user",
+    )
     def destroy(self, request, *args, **kwargs):
-        return super().destroy(request, *args, **kwargs)
+        user = self.get_object()
+        user.soft_delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
     @swagger_auto_schema(
         method="get",
         operation_description="Get current logged-in user's info.",
-        responses={200: UserSerializerV1},
+        operation_summary="Current User",
+        operation_id="get_current_user",
+        responses={200: UserSerializerV1()},
         tags=["Users"],
     )
     @action(
@@ -61,8 +105,10 @@ class UserViewSet(viewsets.ModelViewSet):
     @swagger_auto_schema(
         method="post",
         operation_description="Register a new user.",
-        request_body=UserSerializerV1,
-        responses={201: UserSerializerV1},
+        operation_summary="Register User",
+        operation_id="register_user",
+        request_body=UserSerializerV1(),
+        responses={201: UserSerializerV1()},
         tags=["Users"],
     )
     @action(
@@ -81,7 +127,9 @@ class UserViewSet(viewsets.ModelViewSet):
 
     @swagger_auto_schema(
         method="post",
-        operation_description="Reset password for a user (admin only).",
+        operation_description="Reset password for a user.",
+        operation_summary="Reset Password",
+        operation_id="reset_user_password",
         manual_parameters=[
             openapi.Parameter(
                 "user_id", openapi.IN_QUERY, type=openapi.TYPE_INTEGER, required=True
@@ -99,7 +147,7 @@ class UserViewSet(viewsets.ModelViewSet):
     @action(
         detail=False,
         methods=["post"],
-        permission_classes=[permissions.IsAdminUser],
+        permission_classes=[permissions.IsAdminUser, IsSuperUser],
         url_path="reset-password",
     )
     def reset_password(self, request):
@@ -122,8 +170,10 @@ class UserViewSet(viewsets.ModelViewSet):
     @swagger_auto_schema(
         method="post",
         tags=["Users"],
-        request_body=UserAddressesSerializerV1,
-        operation_summary="Add address to current user",
+        request_body=UserAddressesSerializerV1(),
+        operation_summary="Add address",
+        operation_description="Add address to current user",
+        operation_id="add_address",
         responses={201: UserAddressesSerializerV1()},
     )
     @action(
@@ -153,15 +203,17 @@ class UserViewSet(viewsets.ModelViewSet):
         return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
     @swagger_auto_schema(
-        method="patch",
+        method="put",
         tags=["Users"],
-        request_body=UserProfileSerializerV1,
-        operation_summary="Edit current user's profile",
+        request_body=UserProfileSerializerV1(),
+        operation_summary="Edit profile",
+        operation_description="Edit current users profile",
+        operation_id="edit_profile",
         responses={200: UserProfileSerializerV1()},
     )
     @action(
         detail=False,
-        methods=["patch"],
+        methods=["put"],
         url_path="edit-profile",
         permission_classes=[permissions.IsAuthenticated],
     )
