@@ -121,7 +121,7 @@ class UserTestCase(BaseJWTAPITestCase):
     def test_edit_profile_authenticated(self):
         self._authenticate_user()
         data = {"bio": "Updated"}
-        response = self.client.patch(self.edit_profile_url, data)
+        response = self.client.put(self.edit_profile_url, data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.user.refresh_from_db()
         self.assertEqual(self.user.userprofile.bio, "Updated")
@@ -136,7 +136,7 @@ class UserTestCase(BaseJWTAPITestCase):
         url = f"{self.users_url}/{self.user.id}"
         response = self.client.delete(url)
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
-        self.assertFalse(User.objects.filter(id=self.user.id).exists())
+        self.assertFalse(User.objects.filter(id=self.user.id, deleted=False).exists())
 
     def test_delete_user_as_regular_user(self):
         self._authenticate_user()
