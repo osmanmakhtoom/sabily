@@ -32,7 +32,7 @@ class UserAddressesSerializerV1(serializers.ModelSerializer):
 
 class UserSerializerV1(serializers.ModelSerializer):
     userprofile = UserProfileSerializerV1(read_only=True)
-    addresses = UserAddressesSerializerV1(many=True)
+    addresses = UserAddressesSerializerV1(many=True, required=False)
 
     class Meta:
         model = User
